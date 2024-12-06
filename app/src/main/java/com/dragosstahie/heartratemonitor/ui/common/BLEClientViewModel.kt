@@ -13,6 +13,7 @@ import com.dragosstahie.heartratemonitor.ble.BLEDeviceConnection
 import com.dragosstahie.heartratemonitor.ble.BLEScanner
 import com.dragosstahie.heartratemonitor.ble.PERMISSION_BLUETOOTH_CONNECT
 import com.dragosstahie.heartratemonitor.ble.PERMISSION_BLUETOOTH_SCAN
+import com.dragosstahie.heartratemonitor.data.repository.HeartRateRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -25,7 +26,11 @@ import kotlinx.coroutines.launch
 
 @SuppressLint("MissingPermission")
 @OptIn(ExperimentalCoroutinesApi::class)
-class BLEClientViewModel(private val application: Application) : AndroidViewModel(application) {
+class BLEClientViewModel(
+    private val application: Application,
+    private val heartRateRepository: HeartRateRepository
+) : AndroidViewModel(application) {
+
     private val bleScanner = BLEScanner(application)
     private var activeConnection = MutableStateFlow<BLEDeviceConnection?>(null)
 
@@ -47,6 +52,10 @@ class BLEClientViewModel(private val application: Application) : AndroidViewMode
         activeDeviceServices,
         activeDeviceHeartRate
     ) { state, isDeviceConnected, isReadingHeartRate, services, heartRate ->
+        if (isReadingHeartRate && heartRate != null) {
+            saveReadingToDb(heartRate)
+        }
+
         state.copy(
             isDeviceConnected = isDeviceConnected,
             isReadingHeartRate = isReadingHeartRate,
@@ -112,6 +121,7 @@ class BLEClientViewModel(private val application: Application) : AndroidViewMode
     @RequiresPermission(PERMISSION_BLUETOOTH_CONNECT)
     fun readHeartRateFromActiveDevice() {
         activeConnection.value?.let {
+            clearDb()
             it.readHeartRate()
             isReadingHeartRate.value = true
         }
@@ -122,6 +132,18 @@ class BLEClientViewModel(private val application: Application) : AndroidViewMode
         activeConnection.value?.let {
             it.stopReadingHeartRate()
             isReadingHeartRate.value = false
+        }
+    }
+
+    private fun saveReadingToDb(heartRate: Int) {
+        viewModelScope.launch {
+            heartRateRepository.insert(heartRate, System.currentTimeMillis())
+        }
+    }
+
+    private fun clearDb() {
+        viewModelScope.launch {
+            heartRateRepository.deleteAll()
         }
     }
 

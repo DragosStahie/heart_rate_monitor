@@ -13,10 +13,11 @@ import com.dragosstahie.heartratemonitor.ui.screens.DeviceScreen
 import com.dragosstahie.heartratemonitor.ui.screens.PermissionsRequiredScreen
 import com.dragosstahie.heartratemonitor.ui.screens.ScanningScreen
 import com.dragosstahie.heartratemonitor.ui.screens.haveAllPermissions
+import org.koin.compose.koinInject
 
 @SuppressLint("MissingPermission")
 @Composable
-fun MainNavigation(viewModel: BLEClientViewModel = viewModel()) {
+fun MainNavigation(viewModel: BLEClientViewModel = koinInject()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
