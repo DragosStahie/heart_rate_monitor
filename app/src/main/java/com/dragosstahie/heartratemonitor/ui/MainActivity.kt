@@ -29,18 +29,12 @@ class MainActivity : ComponentActivity() {
 private fun MainActivityContent() {
     HeartRateMonitorTheme {
         Scaffold(content = { innerPadding ->
-//            MainNavigation(
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .consumeWindowInsets(innerPadding)
-//                    .padding(innerPadding)
-//            )
-            Box(
+            MainNavigation(
                 modifier = Modifier
                     .fillMaxSize()
                     .consumeWindowInsets(innerPadding)
-                    .padding(innerPadding),
-            ) { MainNavigation() }
+                    .padding(innerPadding)
+            )
         })
     }
 }

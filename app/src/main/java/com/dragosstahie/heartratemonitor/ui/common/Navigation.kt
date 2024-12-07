@@ -2,6 +2,7 @@ package com.dragosstahie.heartratemonitor.ui.common
 
 import android.os.Parcelable
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.spring
@@ -9,6 +10,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -19,13 +21,14 @@ import androidx.compose.runtime.saveable.mapSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.dragosstahie.heartratemonitor.ui.screens.HomeScreen
+import com.dragosstahie.heartratemonitor.ui.screens.rememberHomeScreenState
 import kotlinx.parcelize.Parcelize
 
 
 @Parcelize
 sealed class Destination : Parcelable {
-    data object ScanningScreen : Destination()
-    data object DeviceScreen : Destination()
+    data object HomeScreen : Destination()
 }
 
 enum class NavigationDirection {
@@ -71,7 +74,7 @@ fun rememberNavigationController(
 @Composable
 fun MainNavigation(
     modifier: Modifier = Modifier,
-    navigationController: NavigationController = rememberNavigationController(homeDestination = Destination.ScanningScreen),
+    navigationController: NavigationController = rememberNavigationController(homeDestination = Destination.HomeScreen),
 ) {
 
     val enterTransition: EnterTransition = remember(navigationController.navigationDirection) {
@@ -118,21 +121,20 @@ fun MainNavigation(
         }
     }
 
-//    AnimatedContent(
-//        targetState = navigationController.currentDestination,
-//        modifier = modifier,
-//        transitionSpec = { enterTransition.togetherWith(exitTransition) },
-//        label = "screen_animation"
-//    ) { destination ->
-//        when (destination) {
-//            is Destination.ScanningScreen -> NavigationItem {
-//                ScanningScreen()
-//            }
-//            is Destination.DeviceScreen -> NavigationItem {
-//                DeviceScreen()
-//            }
-//        }
-//    }
+    AnimatedContent(
+        targetState = navigationController.currentDestination,
+        modifier = modifier,
+        transitionSpec = { enterTransition.togetherWith(exitTransition) },
+        label = "screen_animation"
+    ) { destination ->
+        when (destination) {
+            is Destination.HomeScreen -> NavigationItem {
+                HomeScreen(
+                    state = rememberHomeScreenState()
+                )
+            }
+        }
+    }
 }
 
 @Composable

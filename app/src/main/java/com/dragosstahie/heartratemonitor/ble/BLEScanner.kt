@@ -15,8 +15,6 @@ import kotlinx.coroutines.flow.update
 import java.util.UUID
 
 
-//These fields are marked as API >= 31 in the Manifest class, so we can't use those without warning.
-//So we create our own, which prevents over-suppression of the Linter
 const val PERMISSION_BLUETOOTH_SCAN = "android.permission.BLUETOOTH_SCAN"
 const val PERMISSION_BLUETOOTH_CONNECT = "android.permission.BLUETOOTH_CONNECT"
 

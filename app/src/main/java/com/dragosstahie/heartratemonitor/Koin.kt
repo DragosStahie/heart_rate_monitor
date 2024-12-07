@@ -2,6 +2,7 @@ package com.dragosstahie.heartratemonitor
 
 import android.app.Application
 import androidx.room.Room
+import com.dragosstahie.heartratemonitor.ble.BLEScanner
 import com.dragosstahie.heartratemonitor.data.AppDatabase
 import com.dragosstahie.heartratemonitor.data.dao.HeartRateDao
 import com.dragosstahie.heartratemonitor.data.repository.HeartRateRepository
@@ -33,5 +34,5 @@ val appModule = module {
     factory<HeartRateDao> { get<AppDatabase>().heartRateDao() }
     single<HeartRateRepository> { HeartRateRepository(get()) }
 
-    //DOMAIN
+    single<BLEScanner> { BLEScanner(get()) }
 }
