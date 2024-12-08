@@ -13,14 +13,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -52,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import com.dragosstahie.heartratemonitor.ble.BLEDeviceConnection
 import com.dragosstahie.heartratemonitor.ble.BLEScanner
 import com.dragosstahie.heartratemonitor.ui.theme.largeActionCallTitle
+import com.dragosstahie.heartratemonitor.ui.theme.mediumActionCallTitle
 import com.dragosstahie.heartratemonitor.ui.theme.smallActionCallTitle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -188,7 +187,8 @@ private fun AddShoppingListBottomSheet(
             sheetState = sheetState,
             onDismissRequest = onDismiss,
             dragHandle = null,
-            modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars)
+            modifier = Modifier
+                .defaultMinSize(minHeight = 500.dp),
         ) {
             Row(
                 modifier = Modifier
@@ -222,33 +222,46 @@ private fun AddShoppingListBottomSheet(
                     )
                 }
             }
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .padding(top = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                items(deviceNameList) { item ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                            .clickable { onDeviceSelected(item) },
-                    ) {
-                        Box(
+            if (deviceNameList.isEmpty()) {
+                Text(
+                    text = "No devices in range..",
+                    textAlign = TextAlign.Center,
+                    style = mediumActionCallTitle,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp)
+                        .padding(top = 200.dp),
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(top = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    items(deviceNameList) { item ->
+                        Card(
                             modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 16.dp),
-                            contentAlignment = Alignment.CenterStart,
+                                .fillMaxWidth()
+                                .height(56.dp)
+                                .clickable { onDeviceSelected(item) },
                         ) {
-                            Text(
-                                text = item,
-                                style = smallActionCallTitle,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                textAlign = TextAlign.Center,
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 16.dp),
+                                contentAlignment = Alignment.CenterStart,
+                            ) {
+                                Text(
+                                    text = item,
+                                    style = smallActionCallTitle,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    textAlign = TextAlign.Center,
+                                )
+                            }
                         }
                     }
                 }
