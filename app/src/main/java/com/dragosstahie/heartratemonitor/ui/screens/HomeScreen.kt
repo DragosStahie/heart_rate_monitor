@@ -3,6 +3,7 @@ package com.dragosstahie.heartratemonitor.ui.screens
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.content.Context
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -24,6 +25,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
@@ -53,6 +55,7 @@ import com.dragosstahie.heartratemonitor.ui.theme.largeActionCallTitle
 import com.dragosstahie.heartratemonitor.ui.theme.mediumActionCallTitle
 import com.dragosstahie.heartratemonitor.ui.theme.smallActionCallTitle
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -64,16 +67,39 @@ class HomeScreenState(
     var isBottomSheetVisible by mutableStateOf(false)
         private set
 
+    var isScanning by mutableStateOf(false)
+        private set
+
+    var isSearchingForHeartRateService by mutableStateOf(false)
+        private set
+
     var devicesList by mutableStateOf<List<BluetoothDevice>>(emptyList())
         private set
 
-    var bleConnection by mutableStateOf<BLEDeviceConnection?>(null)
+    var selectedDevice by mutableStateOf<BluetoothDevice?>(null)
         private set
+
+    var heartRateReading by mutableStateOf<Int?>(null)
+        private set
+
+    private var bleConnection = MutableStateFlow<BLEDeviceConnection?>(null)
 
     init {
         coroutineScope.launch {
             bleScanner.foundDevices.collect { devices ->
                 devicesList = devices
+            }
+        }
+        coroutineScope.launch {
+            bleScanner.isScanning.collect {
+                isScanning = it
+            }
+        }
+        coroutineScope.launch {
+            bleConnection.collect { connection ->
+                connection?.listenForConnectionChange()
+                connection?.listenForServices()
+                connection?.listenForHeartRate()
             }
         }
     }
@@ -89,8 +115,43 @@ class HomeScreenState(
     }
 
     fun onDeviceSelected(context: Context, deviceName: String) {
-        bleConnection =
-            devicesList.find { it.name == deviceName }?.run { BLEDeviceConnection(context, this) }
+        selectedDevice = devicesList.find { it.name == deviceName }
+        bleConnection.value = selectedDevice?.run { BLEDeviceConnection(context, this) }
+        isSearchingForHeartRateService = true
+        bleConnection.value?.connect()
+    }
+
+    private fun BLEDeviceConnection.listenForConnectionChange() {
+        coroutineScope.launch {
+            isConnected.collect { isConnected ->
+                if (isConnected) {
+                    discoverServices()
+                }
+            }
+        }
+    }
+
+    private fun BLEDeviceConnection.listenForServices() {
+        coroutineScope.launch {
+            services.collect { services ->
+                if (services.isNotEmpty()) {
+                    readHeartRate()
+                } else {
+                    Log.e(selectedDevice?.name, "Services not found!")
+                }
+            }
+        }
+    }
+
+    private fun BLEDeviceConnection.listenForHeartRate() {
+        coroutineScope.launch {
+            heartRate.collect { hr ->
+                heartRateReading = hr
+                if (services.value.isNotEmpty() && heartRateReading != null) {
+                    isSearchingForHeartRateService = false
+                }
+            }
+        }
     }
 }
 
@@ -140,18 +201,25 @@ fun HomeScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Device name",
+                    text = state.selectedDevice?.name ?: "No selected device",
                     fontSize = 20.sp,
                 )
-                Text(
-                    text = "150 BPM",
-                    fontSize = 20.sp,
-                )
+                if (state.isSearchingForHeartRateService) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                    )
+                } else {
+                    Text(
+                        text = "${state.heartRateReading ?: "--"} BPM",
+                        fontSize = 20.sp,
+                    )
+                }
             }
         }
     }
     AddShoppingListBottomSheet(
         deviceNameList = deviceNames,
+        isScanning = state.isScanning,
         isVisible = state.isBottomSheetVisible,
         onDismiss = { state.onCloseDeviceList() },
         onDeviceSelected = { deviceName -> state.onDeviceSelected(context, deviceName) }
@@ -163,6 +231,7 @@ fun HomeScreen(
 @Composable
 private fun AddShoppingListBottomSheet(
     deviceNameList: List<String>,
+    isScanning: Boolean,
     isVisible: Boolean,
     onDismiss: () -> Unit,
     onDeviceSelected: (deviceName: String) -> Unit
@@ -223,16 +292,28 @@ private fun AddShoppingListBottomSheet(
                 }
             }
             if (deviceNameList.isEmpty()) {
-                Text(
-                    text = "No devices in range..",
-                    textAlign = TextAlign.Center,
-                    style = mediumActionCallTitle,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp)
-                        .padding(top = 200.dp),
-                )
+                if (isScanning) {
+                    Text(
+                        text = "Scanning for devices...",
+                        textAlign = TextAlign.Center,
+                        style = mediumActionCallTitle,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp)
+                            .padding(top = 200.dp),
+                    )
+                } else {
+                    Text(
+                        text = "No devices in range..",
+                        textAlign = TextAlign.Center,
+                        style = mediumActionCallTitle,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                    )
+                }
             } else {
                 LazyColumn(
                     modifier = Modifier
@@ -247,7 +328,10 @@ private fun AddShoppingListBottomSheet(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(56.dp)
-                                .clickable { onDeviceSelected(item) },
+                                .clickable {
+                                    onDeviceSelected(item)
+                                    onDismiss()
+                                },
                         ) {
                             Box(
                                 modifier = Modifier
