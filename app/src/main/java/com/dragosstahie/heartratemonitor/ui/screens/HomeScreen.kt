@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dragosstahie.heartratemonitor.ble.BLEDeviceConnection
 import com.dragosstahie.heartratemonitor.ble.BLEScanner
+import com.dragosstahie.heartratemonitor.ui.common.HeartRateChart
 import com.dragosstahie.heartratemonitor.ui.theme.largeActionCallTitle
 import com.dragosstahie.heartratemonitor.ui.theme.mediumActionCallTitle
 import com.dragosstahie.heartratemonitor.ui.theme.smallActionCallTitle
@@ -216,6 +217,11 @@ fun HomeScreen(
                 }
             }
         }
+        HeartRateChart(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(112.dp),
+        )
     }
     AddShoppingListBottomSheet(
         deviceNameList = deviceNames,

@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "com.dragosstahie.heartratemonitor"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.dragosstahie.heartratemonitor"
@@ -69,6 +69,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
 
+    implementation(libs.vicoComposeM3)
     implementation(libs.materialCompose)
     implementation(libs.composeUiToolingPreview)
     implementation(libs.androidx.lifecycle.runtime.ktx)
