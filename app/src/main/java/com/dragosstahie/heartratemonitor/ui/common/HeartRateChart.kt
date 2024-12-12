@@ -1,13 +1,11 @@
 package com.dragosstahie.heartratemonitor.ui.common
 
-import android.graphics.PorterDuff
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.dragosstahie.heartratemonitor.ui.theme.chartColorNegative
 import com.dragosstahie.heartratemonitor.ui.theme.chartColorPositive
@@ -18,14 +16,15 @@ import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLine
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
+import com.patrykandpatrick.vico.compose.cartesian.rememberVicoScrollState
+import com.patrykandpatrick.vico.compose.cartesian.rememberVicoZoomState
 import com.patrykandpatrick.vico.compose.common.component.rememberLineComponent
 import com.patrykandpatrick.vico.compose.common.component.rememberShapeComponent
-import com.patrykandpatrick.vico.compose.common.component.shapeComponent
 import com.patrykandpatrick.vico.compose.common.dimensions
 import com.patrykandpatrick.vico.compose.common.fill
-import com.patrykandpatrick.vico.compose.common.shader.component
-import com.patrykandpatrick.vico.compose.common.shader.verticalGradient
 import com.patrykandpatrick.vico.compose.common.shape.dashedShape
+import com.patrykandpatrick.vico.core.cartesian.Scroll
+import com.patrykandpatrick.vico.core.cartesian.Zoom
 import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
@@ -34,16 +33,11 @@ import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
 import com.patrykandpatrick.vico.core.common.Fill
 import com.patrykandpatrick.vico.core.common.shader.DynamicShader
 import com.patrykandpatrick.vico.core.common.shape.CorneredShape
-import com.patrykandpatrick.vico.core.common.shape.Shape
 import com.patrykandpatrick.vico.sample.showcase.rememberMarker
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.withContext
-import kotlin.random.Random
 
 
-private val x = (1..100).toList()
+private val x =
+    (1..50).toList() + (50 downTo 1).toList() + (1..50).toList() + (50 downTo 1).toList()
 
 
 private val chartColors
@@ -58,18 +52,7 @@ private val chartColors
 @Composable
 internal fun HeartRateChart(modifier: Modifier) {
     val modelProducer = remember { CartesianChartModelProducer() }
-    LaunchedEffect(Unit) {
-        withContext(Dispatchers.Default) {
-            while (isActive) {
-                modelProducer.runTransaction {
-                    /* Learn more:
-                    https://patrykandpatrick.com/vico/wiki/cartesian-charts/layers/line-layer#data. */
-                    lineSeries { series(x = x, y = x.map { Random.nextFloat() * 30 - 10 }) }
-                }
-                delay(2000)
-            }
-        }
-    }
+    LaunchedEffect(Unit) { modelProducer.runTransaction { lineSeries { series(x) } } }
 
     HeartRateChart(modelProducer, modifier)
 }
@@ -79,6 +62,15 @@ private fun HeartRateChart(modelProducer: CartesianChartModelProducer, modifier:
     val colors = chartColors
     val marker = rememberMarker()
     CartesianChartHost(
+        scrollState = rememberVicoScrollState(
+            scrollEnabled = true,
+            initialScroll = Scroll.Absolute.End,
+            autoScroll = Scroll.Absolute.End,
+        ),
+        zoomState = rememberVicoZoomState(
+            zoomEnabled = false,
+            initialZoom = Zoom.x(200.0),
+        ),
         chart =
         rememberCartesianChart(
             rememberLineCartesianLayer(
@@ -87,54 +79,28 @@ private fun HeartRateChart(modelProducer: CartesianChartModelProducer, modifier:
                     LineCartesianLayer.rememberLine(
                         fill =
                         remember(colors) {
-                            LineCartesianLayer.LineFill.double(fill(colors[0]), fill(colors[1]))
+                            LineCartesianLayer.LineFill.single(
+                                fill(
+                                    DynamicShader.horizontalGradient(
+                                        android.graphics.Color.BLUE,
+                                        android.graphics.Color.GREEN,
+                                        android.graphics.Color.YELLOW,
+                                        android.graphics.Color.RED,
+                                    )
+                                )
+                            )
                         },
                         areaFill =
                         remember(colors) {
-                            LineCartesianLayer.AreaFill.double(
-                                topFill =
+                            LineCartesianLayer.AreaFill.single(
                                 fill(
-                                    DynamicShader.compose(
-                                        DynamicShader.component(
-                                            component =
-                                            shapeComponent(
-                                                fill = fill(colors[0]),
-                                                shape = CorneredShape.Pill,
-                                                margins = dimensions(1.dp),
-                                            ),
-                                            componentSize = 6.dp,
-                                        ),
-                                        DynamicShader.verticalGradient(
-                                            arrayOf(
-                                                Color.Black,
-                                                Color.Transparent
-                                            )
-                                        ),
-                                        PorterDuff.Mode.DST_IN,
+                                    DynamicShader.horizontalGradient(
+                                        android.graphics.Color.BLUE,
+                                        android.graphics.Color.GREEN,
+                                        android.graphics.Color.YELLOW,
+                                        android.graphics.Color.RED,
                                     )
-                                ),
-                                bottomFill =
-                                fill(
-                                    DynamicShader.compose(
-                                        DynamicShader.component(
-                                            component =
-                                            shapeComponent(
-                                                fill = fill(colors[1]),
-                                                shape = Shape.Rectangle,
-                                                margins = dimensions(horizontal = 2.dp),
-                                            ),
-                                            componentSize = 5.dp,
-                                            checkeredArrangement = false,
-                                        ),
-                                        DynamicShader.verticalGradient(
-                                            arrayOf(
-                                                Color.Transparent,
-                                                Color.Black
-                                            )
-                                        ),
-                                        PorterDuff.Mode.DST_IN,
-                                    )
-                                ),
+                                )
                             )
                         },
                     )
@@ -181,4 +147,32 @@ private fun HeartRateChart(modelProducer: CartesianChartModelProducer, modifier:
         modelProducer = modelProducer,
         modifier = modifier,
     )
+}
+
+private fun List<Int>.findMinMaxPoints(): List<Int> {
+    val result = mutableListOf<Int>()
+
+    if (size < 3) return emptyList()
+
+    for (index in 2..<size) {
+        val first = get(index - 2)
+        val second = get(index - 1)
+        val third = get(index)
+
+        if(setOf(first, second, third).size < 2) {
+            continue
+        }
+
+        if (first <= second && second >= third) {
+            result += (index - 1)
+            continue
+        }
+
+        if (first >= second && second <= third) {
+            result += (index - 1)
+            continue
+        }
+    }
+
+    return result
 }
