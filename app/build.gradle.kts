@@ -69,7 +69,6 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
 
-    implementation(libs.vicoComposeM3)
     implementation(libs.materialCompose)
     implementation(libs.composeUiToolingPreview)
     implementation(libs.androidx.lifecycle.runtime.ktx)

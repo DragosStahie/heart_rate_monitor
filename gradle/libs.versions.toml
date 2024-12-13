@@ -15,7 +15,6 @@ activityCompose = "1.9.2"
 composeBom = "2024.09.02"
 room = "2.6.1"
 moshi = "1.15.1"
-vico = "2.0.0-beta.3"
 
 
 [libraries]
@@ -25,7 +24,6 @@ androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "j
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 
-vicoComposeM3 = { group = "com.patrykandpatrick.vico", name = "compose-m3", version.ref = "vico" }
 materialCompose = { group = "androidx.compose.material3", name = "material3", version.ref = "materialCompose" }
 composeUiToolingPreview = { group = "androidx.compose.ui", name = "ui-tooling-preview", version.ref = "compose" }
 composeUiTooling = { group = "androidx.compose.ui", name = "ui-tooling", version.ref = "compose" }

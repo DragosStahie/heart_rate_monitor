@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -51,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dragosstahie.heartratemonitor.ble.BLEDeviceConnection
 import com.dragosstahie.heartratemonitor.ble.BLEScanner
+import com.dragosstahie.heartratemonitor.data.repository.HeartRateRepository
 import com.dragosstahie.heartratemonitor.ui.common.HeartRateChart
 import com.dragosstahie.heartratemonitor.ui.theme.largeActionCallTitle
 import com.dragosstahie.heartratemonitor.ui.theme.mediumActionCallTitle
@@ -63,6 +66,7 @@ import org.koin.compose.koinInject
 @SuppressLint("MissingPermission")
 class HomeScreenState(
     private val bleScanner: BLEScanner,
+    private val heartRateRepository: HeartRateRepository,
     private val coroutineScope: CoroutineScope
 ) {
     var isBottomSheetVisible by mutableStateOf(false)
@@ -81,6 +85,9 @@ class HomeScreenState(
         private set
 
     var heartRateReading by mutableStateOf<Int?>(null)
+        private set
+
+    var sessionHeartRateReadings by mutableStateOf(emptyList<Pair<Long, Int>>())
         private set
 
     private var bleConnection = MutableStateFlow<BLEDeviceConnection?>(null)
@@ -107,6 +114,7 @@ class HomeScreenState(
 
     fun onOpenDeviceList() {
         isBottomSheetVisible = true
+        bleConnection.value?.disconnect()
         bleScanner.startScanning()
     }
 
@@ -127,6 +135,7 @@ class HomeScreenState(
             isConnected.collect { isConnected ->
                 if (isConnected) {
                     discoverServices()
+                    cleanDb()
                 }
             }
         }
@@ -147,11 +156,27 @@ class HomeScreenState(
     private fun BLEDeviceConnection.listenForHeartRate() {
         coroutineScope.launch {
             heartRate.collect { hr ->
-                heartRateReading = hr
-                if (services.value.isNotEmpty() && heartRateReading != null) {
+                if (services.value.isNotEmpty() && hr != null) {
                     isSearchingForHeartRateService = false
                 }
+
+                heartRateReading = hr
+                sessionHeartRateReadings += System.currentTimeMillis() to (hr ?: -1)
+
+                if (sessionHeartRateReadings.size.mod(100) == 0) {
+                    heartRateRepository.insert(
+                        *(sessionHeartRateReadings.chunked(100).last().toTypedArray())
+                    )
+                }
+
+                // TODO: cleanup to not overload memory - only keep max 1000 entries at one time - start overwriting old values afterwards
             }
+        }
+    }
+
+    private fun cleanDb() {
+        coroutineScope.launch {
+            heartRateRepository.deleteAll()
         }
     }
 }
@@ -159,10 +184,12 @@ class HomeScreenState(
 @Composable
 fun rememberHomeScreenState(
     bleScanner: BLEScanner = koinInject(),
+    heartRateRepository: HeartRateRepository = koinInject(),
     coroutineScope: CoroutineScope = rememberCoroutineScope()
 ) = remember {
     HomeScreenState(
         bleScanner = bleScanner,
+        heartRateRepository = heartRateRepository,
         coroutineScope = coroutineScope
     )
 }
@@ -191,12 +218,14 @@ fun HomeScreen(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp)
-                .clickable { state.onOpenDeviceList() },
+                .wrapContentHeight(Alignment.Top)
+                .clickable { state.onOpenDeviceList() }
+                .animateContentSize(),
         ) {
             Row(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
+                    .height(52.dp)
                     .padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
@@ -216,14 +245,20 @@ fun HomeScreen(
                     )
                 }
             }
+
+            if (state.sessionHeartRateReadings.isNotEmpty()) {
+                HeartRateChart(
+                    hearRateReadings = state.sessionHeartRateReadings.map { it.second },
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .padding(top = 32.dp)
+                        .fillMaxWidth()
+                        .height(152.dp),
+                )
+            }
         }
-        HeartRateChart(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(112.dp),
-        )
     }
-    AddShoppingListBottomSheet(
+    SelectDeviceBottomSheet(
         deviceNameList = deviceNames,
         isScanning = state.isScanning,
         isVisible = state.isBottomSheetVisible,
@@ -235,7 +270,7 @@ fun HomeScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AddShoppingListBottomSheet(
+private fun SelectDeviceBottomSheet(
     deviceNameList: List<String>,
     isScanning: Boolean,
     isVisible: Boolean,

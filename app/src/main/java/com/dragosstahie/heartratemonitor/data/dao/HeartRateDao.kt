@@ -10,7 +10,7 @@ import com.dragosstahie.heartratemonitor.data.entity.HeartRateEntity
 interface HeartRateDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(vararg device: HeartRateEntity)
+    suspend fun insert(vararg reading: HeartRateEntity)
 
     @Query("DELETE FROM HEART_RATE")
     suspend fun deleteAll()

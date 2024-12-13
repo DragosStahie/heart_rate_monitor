@@ -8,6 +8,8 @@ import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
 import android.content.Context
 import androidx.annotation.RequiresPermission
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.nio.ByteBuffer
 
@@ -20,7 +22,7 @@ class BLEDeviceConnection @RequiresPermission("PERMISSION_BLUETOOTH_CONNECT") co
     private val bluetoothDevice: BluetoothDevice
 ) {
     val isConnected = MutableStateFlow(false)
-    val heartRate = MutableStateFlow<Int?>(null)
+    val heartRate = MutableSharedFlow<Int?>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
     val services = MutableStateFlow<List<BluetoothGattService>>(emptyList())
 
     private val callback = object : BluetoothGattCallback() {
@@ -46,7 +48,7 @@ class BLEDeviceConnection @RequiresPermission("PERMISSION_BLUETOOTH_CONNECT") co
         ) {
             super.onCharacteristicChanged(gatt, characteristic, value)
             if (characteristic.uuid == HEART_RATE_MEASUREMENT_CHAR_UUID) {
-                heartRate.value = characteristic.value.getHeartRate()
+                heartRate.tryEmit(characteristic.value.getHeartRate())
             }
         }
 

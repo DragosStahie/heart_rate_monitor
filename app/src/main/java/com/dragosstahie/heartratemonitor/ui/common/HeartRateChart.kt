@@ -1,178 +1,109 @@
 package com.dragosstahie.heartratemonitor.ui.common
 
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.dragosstahie.heartratemonitor.ui.theme.chartColorNegative
-import com.dragosstahie.heartratemonitor.ui.theme.chartColorPositive
-import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
-import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisLabelComponent
-import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
-import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
-import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLine
-import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
-import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
-import com.patrykandpatrick.vico.compose.cartesian.rememberVicoScrollState
-import com.patrykandpatrick.vico.compose.cartesian.rememberVicoZoomState
-import com.patrykandpatrick.vico.compose.common.component.rememberLineComponent
-import com.patrykandpatrick.vico.compose.common.component.rememberShapeComponent
-import com.patrykandpatrick.vico.compose.common.dimensions
-import com.patrykandpatrick.vico.compose.common.fill
-import com.patrykandpatrick.vico.compose.common.shape.dashedShape
-import com.patrykandpatrick.vico.core.cartesian.Scroll
-import com.patrykandpatrick.vico.core.cartesian.Zoom
-import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
-import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
-import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
-import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
-import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
-import com.patrykandpatrick.vico.core.common.Fill
-import com.patrykandpatrick.vico.core.common.shader.DynamicShader
-import com.patrykandpatrick.vico.core.common.shape.CorneredShape
-import com.patrykandpatrick.vico.sample.showcase.rememberMarker
 
 
-private val x =
-    (1..50).toList() + (50 downTo 1).toList() + (1..50).toList() + (50 downTo 1).toList()
+private val zone1Color = Color(87, 162, 241)
+private val zone2Color = Color(123, 237, 224)
+private val zone3Color = Color(203, 251, 80)
+private val zone4Color = Color(238, 136, 53)
+private val zone5Color = Color(234, 55, 111)
 
-
-private val chartColors
-    @ReadOnlyComposable
-    @Composable
-    get() =
-        listOf(
-            chartColorPositive,
-            chartColorNegative,
-        )
 
 @Composable
-internal fun HeartRateChart(modifier: Modifier) {
-    val modelProducer = remember { CartesianChartModelProducer() }
-    LaunchedEffect(Unit) { modelProducer.runTransaction { lineSeries { series(x) } } }
-
-    HeartRateChart(modelProducer, modifier)
-}
-
-@Composable
-private fun HeartRateChart(modelProducer: CartesianChartModelProducer, modifier: Modifier) {
-    val colors = chartColors
-    val marker = rememberMarker()
-    CartesianChartHost(
-        scrollState = rememberVicoScrollState(
-            scrollEnabled = true,
-            initialScroll = Scroll.Absolute.End,
-            autoScroll = Scroll.Absolute.End,
-        ),
-        zoomState = rememberVicoZoomState(
-            zoomEnabled = false,
-            initialZoom = Zoom.x(200.0),
-        ),
-        chart =
-        rememberCartesianChart(
-            rememberLineCartesianLayer(
-                lineProvider =
-                LineCartesianLayer.LineProvider.series(
-                    LineCartesianLayer.rememberLine(
-                        fill =
-                        remember(colors) {
-                            LineCartesianLayer.LineFill.single(
-                                fill(
-                                    DynamicShader.horizontalGradient(
-                                        android.graphics.Color.BLUE,
-                                        android.graphics.Color.GREEN,
-                                        android.graphics.Color.YELLOW,
-                                        android.graphics.Color.RED,
-                                    )
-                                )
-                            )
-                        },
-                        areaFill =
-                        remember(colors) {
-                            LineCartesianLayer.AreaFill.single(
-                                fill(
-                                    DynamicShader.horizontalGradient(
-                                        android.graphics.Color.BLUE,
-                                        android.graphics.Color.GREEN,
-                                        android.graphics.Color.YELLOW,
-                                        android.graphics.Color.RED,
-                                    )
-                                )
-                            )
-                        },
-                    )
-                )
-            ),
-            startAxis =
-            VerticalAxis.rememberStart(
-                label =
-                rememberAxisLabelComponent(
-                    color = MaterialTheme.colorScheme.onBackground,
-                    margins = dimensions(end = 8.dp),
-                    padding = dimensions(6.dp, 2.dp),
-                    background =
-                    rememberShapeComponent(
-                        fill = Fill.Transparent,
-                        shape = CorneredShape.Pill,
-                        strokeFill = fill(MaterialTheme.colorScheme.outlineVariant),
-                        strokeThickness = 1.dp,
-                    ),
-                ),
-                line = null,
-                tick = null,
-                guideline =
-                rememberLineComponent(
-                    fill = fill(MaterialTheme.colorScheme.outlineVariant),
-                    shape = dashedShape(
-                        shape = CorneredShape.Pill,
-                        dashLength = 4.dp,
-                        gapLength = 8.dp
-                    ),
-                ),
-                itemPlacer = remember { VerticalAxis.ItemPlacer.count(count = { 4 }) },
-            ),
-            bottomAxis =
-            HorizontalAxis.rememberBottom(
-                guideline = null,
-                itemPlacer =
-                remember {
-                    HorizontalAxis.ItemPlacer.aligned(spacing = 3, addExtremeLabelPadding = true)
-                },
-            ),
-            marker = marker,
-        ),
-        modelProducer = modelProducer,
-        modifier = modifier,
-    )
-}
-
-private fun List<Int>.findMinMaxPoints(): List<Int> {
-    val result = mutableListOf<Int>()
-
-    if (size < 3) return emptyList()
-
-    for (index in 2..<size) {
-        val first = get(index - 2)
-        val second = get(index - 1)
-        val third = get(index)
-
-        if(setOf(first, second, third).size < 2) {
-            continue
-        }
-
-        if (first <= second && second >= third) {
-            result += (index - 1)
-            continue
-        }
-
-        if (first >= second && second <= third) {
-            result += (index - 1)
-            continue
+fun HeartRateChart(
+    hearRateReadings: List<Int>,
+    modifier: Modifier = Modifier,
+) {
+    val maxHeartRate by remember(hearRateReadings) {
+        derivedStateOf {
+            hearRateReadings.maxOrNull() ?: -1
         }
     }
 
-    return result
+    val lazyState = rememberLazyListState()
+
+    LaunchedEffect(hearRateReadings.size) {
+        if (hearRateReadings.isNotEmpty()) {
+            lazyState.animateScrollToItem(hearRateReadings.size - 1)
+        }
+    }
+
+    LazyRow(
+        state = lazyState,
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(1.dp),
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        items(hearRateReadings) { reading ->
+            ChartBar(
+                percentFilled = reading.toFloat() / maxHeartRate,
+                color = reading.getZoneColor()
+            )
+        }
+    }
+}
+
+@Composable
+private fun ChartBar(
+    percentFilled: Float,
+    color: Color,
+) {
+    Spacer(
+        modifier = Modifier
+            .fillMaxHeight(percentFilled)
+            .width(4.dp)
+            .clip(RoundedCornerShape(1.dp, 1.dp, 0.dp, 0.dp))
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        color,
+                        color.copy(alpha = 0.5f)
+                    )
+                ),
+            )
+    )
+}
+
+
+private fun Int.getZoneColor(): Color = when (this) {
+    in 0..135 -> zone1Color
+    in 136..149 -> zone2Color
+    in 150..163 -> zone3Color
+    in 164..177 -> zone4Color
+    in 150..Int.MAX_VALUE -> zone5Color
+    else -> Color.Gray
+}
+
+@Preview(showBackground = true)
+@Composable
+fun HeartRateChartPreview(modifier: Modifier = Modifier) {
+    HeartRateChart(
+        hearRateReadings = (50..165).toList() + (160 downTo 80).toList() + (90..196).toList() + (195 downTo 50).toList(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(152.dp),
+    )
 }
