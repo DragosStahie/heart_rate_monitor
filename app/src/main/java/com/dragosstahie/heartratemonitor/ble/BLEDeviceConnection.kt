@@ -8,6 +8,7 @@ import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
 import android.content.Context
 import androidx.annotation.RequiresPermission
+import com.dragosstahie.heartratemonitor.common.Logger
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,8 +23,10 @@ class BLEDeviceConnection @RequiresPermission("PERMISSION_BLUETOOTH_CONNECT") co
     private val bluetoothDevice: BluetoothDevice
 ) {
     val isConnected = MutableStateFlow(false)
-    val heartRate = MutableSharedFlow<Int?>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    val heartRate =
+        MutableSharedFlow<Int?>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
     val services = MutableStateFlow<List<BluetoothGattService>>(emptyList())
+    private val logger = Logger.getInstance()
 
     private val callback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
@@ -34,11 +37,13 @@ class BLEDeviceConnection @RequiresPermission("PERMISSION_BLUETOOTH_CONNECT") co
                 services.value = gatt.services
             }
             isConnected.value = connected
+            logger.debug("onConnectionStateChange: connected = $connected")
         }
 
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             super.onServicesDiscovered(gatt, status)
             services.value = gatt.services
+            logger.debug("onServicesDiscovered: ${gatt.services}")
         }
 
         override fun onCharacteristicChanged(
@@ -48,6 +53,7 @@ class BLEDeviceConnection @RequiresPermission("PERMISSION_BLUETOOTH_CONNECT") co
         ) {
             super.onCharacteristicChanged(gatt, characteristic, value)
             if (characteristic.uuid == HEART_RATE_MEASUREMENT_CHAR_UUID) {
+                logger.debug("onCharacteristicChanged: found HR characteristic!")
                 heartRate.tryEmit(characteristic.value.getHeartRate())
             }
         }
@@ -68,16 +74,19 @@ class BLEDeviceConnection @RequiresPermission("PERMISSION_BLUETOOTH_CONNECT") co
         gatt?.disconnect()
         gatt?.close()
         gatt = null
+        logger.debug("disconnect")
     }
 
     @RequiresPermission(PERMISSION_BLUETOOTH_CONNECT)
     fun connect() {
         gatt = bluetoothDevice.connectGatt(context, false, callback)
+        logger.debug("connect")
     }
 
     @RequiresPermission(PERMISSION_BLUETOOTH_CONNECT)
     fun discoverServices() {
         gatt?.discoverServices()
+        logger.debug("discoverServices")
     }
 
     @RequiresPermission(PERMISSION_BLUETOOTH_CONNECT)
@@ -91,6 +100,7 @@ class BLEDeviceConnection @RequiresPermission("PERMISSION_BLUETOOTH_CONNECT") co
             desc?.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
             gatt?.writeDescriptor(desc)
         }
+        logger.debug("readHeartRate - characteristic = $characteristic")
     }
 
 
@@ -105,21 +115,28 @@ class BLEDeviceConnection @RequiresPermission("PERMISSION_BLUETOOTH_CONNECT") co
 
             gatt?.setCharacteristicNotification(characteristic, false)
         }
+        logger.debug("stopReadHeartRate - characteristic = $characteristic")
     }
 
     private fun ByteArray.getHeartRate(): Int {
+        logger.debug("getHeartRate - start")
+
         // first byte of heart rate record denotes flags
-        var hr = -1
+        val hr: Int
         val flags: Byte = this[0]
 
         var offset = 1
 
         val hrc2 = (flags.toInt() and 1) == 1
+        logger.debug("getHeartRate - hrc2 = $hrc2")
+
         if (hrc2) { // this means the BPM is un uint16
-            hr = ByteBuffer.wrap(this, offset, 2).short.toInt()
+            hr = byteArrayOf(this[offset], this[offset + 1]).fromUnsignedBytesToInt()
+            logger.debug("getHeartRate - reading as uint16 BIG ENDIAN - hr = $hr from bytes ${this[offset]}${this[offset + 1]}")
             offset += 2
         } else { // BPM is uint8
-            hr = this[offset].toInt()
+            hr = byteArrayOf(this[offset]).fromUnsignedBytesToInt()
+            logger.debug("getHeartRate - reading as uint8  - hr = $hr from byte ${this[offset]}")
             offset += 1
         }
 
@@ -142,9 +159,23 @@ class BLEDeviceConnection @RequiresPermission("PERMISSION_BLUETOOTH_CONNECT") co
 
                 val intervalLengthInSeconds = value.toDouble() / 1024.0
                 offset += 2
+                logger.debug("getHeartRate - reading respiration - rr = $intervalLengthInSeconds")
             }
         }
 
         return hr
+    }
+
+    private fun ByteArray.fromUnsignedBytesToInt(): Int {
+        val bytes = 4
+        val paddedArray = ByteArray(bytes)
+        for (i in 0 until bytes - this.size) paddedArray[i] = 0
+        for (i in bytes - this.size until paddedArray.size) paddedArray[i] =
+            this[i - (bytes - this.size)]
+
+        return (((paddedArray[0].toULong() and 0xFFu) shl 24) or
+                ((paddedArray[1].toULong() and 0xFFu) shl 16) or
+                ((paddedArray[2].toULong() and 0xFFu) shl 8) or
+                (paddedArray[3].toULong() and 0xFFu)).toInt()
     }
 }

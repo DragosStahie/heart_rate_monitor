@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dragosstahie.heartratemonitor.ble.BLEDeviceConnection
 import com.dragosstahie.heartratemonitor.ble.BLEScanner
+import com.dragosstahie.heartratemonitor.common.Logger
 import com.dragosstahie.heartratemonitor.data.repository.HeartRateRepository
 import com.dragosstahie.heartratemonitor.ui.common.HeartRateChart
 import com.dragosstahie.heartratemonitor.ui.theme.largeActionCallTitle
@@ -125,6 +126,7 @@ class HomeScreenState(
 
     fun onDeviceSelected(context: Context, deviceName: String) {
         selectedDevice = devicesList.find { it.name == deviceName }
+        selectedDevice?.let { Logger.initialize(it.name, context) }
         bleConnection.value = selectedDevice?.run { BLEDeviceConnection(context, this) }
         isSearchingForHeartRateService = true
         bleConnection.value?.connect()
