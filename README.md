@@ -10,8 +10,8 @@ Here are some highlights of the app in action:
 
 | Feature                         | Screenshot                                                                                                                         |
 |---------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
-| **Device Search & Connection**  |  <img src="https://github.com/user-attachments/assets/d92580e8-1bb7-447e-8726-43766d2cebd5" alt="search & connect" height="800"/>  |
-| **Color-Coded Heart Rate Zones**|  <img src="https://github.com/user-attachments/assets/fe96d1c0-5b3b-459f-b50b-fe8415da0f4f" alt="heart rate zones" height="800"/>  |
+| **Device Search & Connection**  |  <img src="https://github.com/user-attachments/assets/d92580e8-1bb7-447e-8726-43766d2cebd5" alt="search & connect" height="600"/>  |
+| **Color-Coded Heart Rate Zones**|  <img src="https://github.com/user-attachments/assets/fe96d1c0-5b3b-459f-b50b-fe8415da0f4f" alt="heart rate zones" height="600"/>  |
 
 ---
 
