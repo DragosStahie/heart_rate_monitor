@@ -8,10 +8,10 @@ This is a **Jetpack Compose-based Android application** that connects to **Bluet
 
 Here are some highlights of the app in action:  
 
-| Feature                         | Screenshot                                                                                                                                   |
-|---------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| **Device Search & Connection**  | ![Search and connect to devices](![ble_hr_select_device](https://github.com/user-attachments/assets/d92580e8-1bb7-447e-8726-43766d2cebd5))   |
-| **Color-Coded Heart Rate Zones**| ![Heart rate zones in color](![ble_hr_chart](https://github.com/user-attachments/assets/fe96d1c0-5b3b-459f-b50b-fe8415da0f4f))               |
+| Feature                         | Screenshot                                                                                                                         |
+|---------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| **Device Search & Connection**  |  <img src="https://github.com/user-attachments/assets/d92580e8-1bb7-447e-8726-43766d2cebd5" alt="search & connect" height="800"/>  |
+| **Color-Coded Heart Rate Zones**|  <img src="https://github.com/user-attachments/assets/fe96d1c0-5b3b-459f-b50b-fe8415da0f4f" alt="heart rate zones" height="800"/>  |
 
 ---
 
